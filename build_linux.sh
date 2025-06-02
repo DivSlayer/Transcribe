@@ -32,7 +32,7 @@ mkdir -p templates static uploads chunks
 
 # Build the executable
 echo "Building executable with PyInstaller..."
-pyinstaller --clean --noconfirm --onefile transcribe.spec
+pyinstaller --clean --noconfirm transcribe.spec
 
 # Check if build was successful
 if [ $? -eq 0 ]; then
