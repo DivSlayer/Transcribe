@@ -36,8 +36,15 @@ jobs:
         pip install PyAudio
     
     - name: Create directories
+      if: matrix.os == 'ubuntu-latest'
       run: |
-        mkdir -p uploads chunks output
+        mkdir -p chunks output
+    
+    - name: Create directories
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path chunks, output
     
     - name: Build executable
       if: matrix.os == 'windows-latest'
