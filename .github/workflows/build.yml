@@ -9,10 +9,10 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     
@@ -35,7 +35,7 @@ jobs:
         dir dist
     
     - name: Upload Windows executable
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: Transcribe-Windows
         path: dist/Transcribe.exe
@@ -44,10 +44,10 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     
@@ -78,7 +78,7 @@ jobs:
       run: chmod +x dist/transcribe
     
     - name: Upload Linux executable
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: Transcribe-Linux
         path: dist/transcribe
@@ -92,14 +92,14 @@ jobs:
       run: mkdir -p release
     
     - name: Download Windows executable
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: Transcribe-Windows
         path: release
         if-no-files-found: error
     
     - name: Download Linux executable
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: Transcribe-Linux
         path: release
