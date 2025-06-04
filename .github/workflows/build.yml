@@ -64,29 +64,59 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        Write-Host "Installing requirements with retry logic..."
-        $maxAttempts = 3
-        $attempt = 1
+        Write-Host "Starting requirements installation..."
         
-        while ($attempt -le $maxAttempts) {
-          Write-Host "Attempt $attempt of $maxAttempts"
-          try {
-            pip install --no-cache-dir -r requirements.txt
-            Write-Host "Successfully installed requirements"
-            break
-          }
-          catch {
-            Write-Host "Attempt $attempt failed"
-            if ($attempt -eq $maxAttempts) {
-              Write-Host "All attempts failed"
-              exit 1
+        # Function to install a single package with retry
+        function Install-PackageWithRetry {
+          param (
+            [string]$packageName,
+            [int]$maxAttempts = 3
+          )
+          
+          $attempt = 1
+          while ($attempt -le $maxAttempts) {
+            Write-Host "Installing $packageName (Attempt $attempt of $maxAttempts)..."
+            try {
+              pip install --no-cache-dir $packageName
+              Write-Host "Successfully installed $packageName"
+              return $true
             }
-            Write-Host "Retrying in 10 seconds..."
-            Start-Sleep -Seconds 10
-            $attempt++
+            catch {
+              Write-Host "Failed to install $packageName on attempt $attempt"
+              if ($attempt -eq $maxAttempts) {
+                Write-Host "All attempts failed for $packageName"
+                return $false
+              }
+              Write-Host "Retrying in 5 seconds..."
+              Start-Sleep -Seconds 5
+              $attempt++
+            }
+          }
+          return $false
+        }
+        
+        # Read requirements file
+        Write-Host "Reading requirements.txt..."
+        $requirements = Get-Content requirements.txt
+        
+        # Install each package individually
+        $failedPackages = @()
+        foreach ($req in $requirements) {
+          if ($req -and -not $req.StartsWith('#')) {
+            if (-not (Install-PackageWithRetry $req)) {
+              $failedPackages += $req
+            }
           }
         }
         
+        # Report results
+        if ($failedPackages.Count -gt 0) {
+          Write-Host "Failed to install the following packages:"
+          $failedPackages | ForEach-Object { Write-Host "- $_" }
+          exit 1
+        }
+        
+        Write-Host "All packages installed successfully"
         Write-Host "Verifying installations..."
         pip list
     
