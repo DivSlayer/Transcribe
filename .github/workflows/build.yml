@@ -121,7 +121,7 @@ jobs:
         
         # Build using spec file
         Write-Host "Building with spec file..."
-        pyinstaller --clean --noconfirm gui.spec
+        pyinstaller --clean --noconfirm transcribe.spec
         
         Write-Host "PyInstaller build completed"
         Write-Host "Checking dist directory:"
@@ -153,7 +153,7 @@ jobs:
         
         # Build using spec file
         echo "Building with spec file..."
-        pyinstaller --clean --noconfirm gui.spec
+        pyinstaller --clean --noconfirm transcribe.spec
         
         echo "PyInstaller build completed"
         echo "Checking dist directory:"
