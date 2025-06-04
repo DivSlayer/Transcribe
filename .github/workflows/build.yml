@@ -33,7 +33,8 @@ jobs:
         python -m pip install --upgrade pip
         pip --version
     
-    - name: Install base requirements
+    - name: Install base requirements (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         echo "Installing requirements with retry logic..."
         max_attempts=3
@@ -57,6 +58,36 @@ jobs:
         done
         
         echo "Verifying installations..."
+        pip list
+    
+    - name: Install base requirements (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        Write-Host "Installing requirements with retry logic..."
+        $maxAttempts = 3
+        $attempt = 1
+        
+        while ($attempt -le $maxAttempts) {
+          Write-Host "Attempt $attempt of $maxAttempts"
+          try {
+            pip install --no-cache-dir -r requirements.txt
+            Write-Host "Successfully installed requirements"
+            break
+          }
+          catch {
+            Write-Host "Attempt $attempt failed"
+            if ($attempt -eq $maxAttempts) {
+              Write-Host "All attempts failed"
+              exit 1
+            }
+            Write-Host "Retrying in 10 seconds..."
+            Start-Sleep -Seconds 10
+            $attempt++
+          }
+        }
+        
+        Write-Host "Verifying installations..."
         pip list
     
     - name: Install PyInstaller
