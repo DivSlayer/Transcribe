@@ -3,3 +3,4 @@ pydub
 pyinstaller
 ffmpeg-python
 numpy
+PyAudio
