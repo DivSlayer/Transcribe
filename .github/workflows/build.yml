@@ -1,169 +1,33 @@
-name: Build and Release
+name: Build and Upload Artifacts
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+  pull_request:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-    
-    - name: Install system dependencies
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ffmpeg python3-dev build-essential
-        sudo apt-get install -y portaudio19-dev python3-pyaudio
-    
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
-        pip install numpy
-        pip install PyAudio
-    
-    - name: Create directories
-      run: |
-        mkdir -p templates static uploads chunks output
-    
-    - name: Build executable
-      if: matrix.os == 'windows-latest'
-      run: |
-        pyinstaller --onefile --clean --noconfirm ^
-          --add-data "templates;templates" ^
-          --add-data "static;static" ^
-          --add-data "uploads;uploads" ^
-          --add-data "chunks;chunks" ^
-          --add-data "output;output" ^
-          --hidden-import channels ^
-          --hidden-import daphne ^
-          --hidden-import django ^
-          --hidden-import SpeechRecognition ^
-          --hidden-import pydub ^
-          --hidden-import ffmpeg ^
-          --hidden-import ffmpeg-python ^
-          --hidden-import aifc ^
-          --hidden-import wave ^
-          --hidden-import audioop ^
-          --hidden-import array ^
-          --hidden-import struct ^
-          --hidden-import numpy ^
-          --hidden-import pyaudio ^
-          gui.py
-        if (Test-Path dist/Transcribe.exe) { mv dist/Transcribe.exe dist/transcribe.exe }
-    
-    - name: Build executable
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        # Debug information
-        echo "Python version:"
-        python --version
-        echo "Pip version:"
-        pip --version
-        echo "Installed packages:"
-        pip list
-        
-        # Build with verbose output
-        pyinstaller --onefile --clean --noconfirm \
-          --add-data "templates:templates" \
-          --add-data "static:static" \
-          --add-data "uploads:uploads" \
-          --add-data "chunks:chunks" \
-          --add-data "output:output" \
-          --hidden-import channels \
-          --hidden-import daphne \
-          --hidden-import django \
-          --hidden-import SpeechRecognition \
-          --hidden-import pydub \
-          --hidden-import ffmpeg \
-          --hidden-import ffmpeg-python \
-          --hidden-import aifc \
-          --hidden-import wave \
-          --hidden-import audioop \
-          --hidden-import array \
-          --hidden-import struct \
-          --hidden-import numpy \
-          --hidden-import pyaudio \
-          --log-level DEBUG \
-          gui.py
-        
-        # Check if build was successful
-        if [ -f "dist/transcribe" ]; then
-          chmod +x dist/transcribe
-          echo "Build successful"
-        else
-          echo "Build failed - executable not found"
-          exit 1
-        fi
-    
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: transcribe-${{ matrix.os }}
-        path: dist/transcribe*
-
-  release:
-    needs: build
     runs-on: ubuntu-latest
+
     steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          artifacts/transcribe-windows-latest/transcribe.exe
-          artifacts/transcribe-ubuntu-latest/transcribe
-        name: Release ${{ github.ref_name }}
-        tag_name: ${{ github.ref_name }}
-        body: |
-          # Transcribe v${{ github.ref_name }}
-          
-          ## Features
-          - Audio transcription with real-time processing
-          - Support for multiple audio formats
-          - User-friendly GUI interface
-          - Cross-platform support (Windows and Linux)
-          - Advanced noise reduction and audio processing
-          - SRT subtitle generation
-          
-          ## Downloads
-          - Windows: transcribe.exe
-          - Linux: transcribe (executable)
-          
-          ## System Requirements
-          - Windows 10/11 or Linux (Kali Linux tested)
-          - FFmpeg installed (included in the package)
-          - 4GB RAM minimum recommended
-          - 500MB free disk space
-          
-          ## Installation
-          1. Download the appropriate executable for your system
-          2. Make sure you have FFmpeg installed (included in the package)
-          3. Run the executable
-          
-          ## Usage
-          1. Click "Select Audio File" to choose your audio file
-          2. Click "Transcribe" to start the transcription process
-          3. The transcription will be saved in the output folder
-          4. SRT subtitles will be generated automatically
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run build
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3.1.3  # Pinned version for stability
+        with:
+          name: build-artifacts
+          path: |
+            dist/
