@@ -121,8 +121,61 @@ jobs:
         pip list
     
     - name: Install PyInstaller
+      if: matrix.os == 'ubuntu-latest'
       run: |
-        pip install pyinstaller
+        echo "Installing PyInstaller with retry logic..."
+        max_attempts=3
+        attempt=1
+        
+        while [ $attempt -le $max_attempts ]; do
+          echo "Attempt $attempt of $max_attempts"
+          if pip install --no-cache-dir pyinstaller; then
+            echo "Successfully installed PyInstaller"
+            break
+          else
+            echo "Attempt $attempt failed"
+            if [ $attempt -eq $max_attempts ]; then
+              echo "All attempts failed"
+              exit 1
+            fi
+            echo "Retrying in 5 seconds..."
+            sleep 5
+            attempt=$((attempt + 1))
+          fi
+        done
+        
+        echo "Verifying PyInstaller installation..."
+        pyinstaller --version
+
+    - name: Install PyInstaller
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        Write-Host "Installing PyInstaller with retry logic..."
+        $maxAttempts = 3
+        $attempt = 1
+        
+        while ($attempt -le $maxAttempts) {
+          Write-Host "Attempt $attempt of $maxAttempts"
+          try {
+            pip install --no-cache-dir pyinstaller
+            Write-Host "Successfully installed PyInstaller"
+            break
+          }
+          catch {
+            Write-Host "Attempt $attempt failed"
+            if ($attempt -eq $maxAttempts) {
+              Write-Host "All attempts failed"
+              exit 1
+            }
+            Write-Host "Retrying in 5 seconds..."
+            Start-Sleep -Seconds 5
+            $attempt++
+          }
+        }
+        
+        Write-Host "Verifying PyInstaller installation..."
+        pyinstaller --version
     
     - name: Install additional dependencies
       run: |
