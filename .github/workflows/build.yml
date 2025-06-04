@@ -35,7 +35,29 @@ jobs:
     
     - name: Install base requirements
       run: |
-        pip install -r requirements.txt
+        echo "Installing requirements with retry logic..."
+        max_attempts=3
+        attempt=1
+        
+        while [ $attempt -le $max_attempts ]; do
+          echo "Attempt $attempt of $max_attempts"
+          if pip install --no-cache-dir -r requirements.txt; then
+            echo "Successfully installed requirements"
+            break
+          else
+            echo "Attempt $attempt failed"
+            if [ $attempt -eq $max_attempts ]; then
+              echo "All attempts failed"
+              exit 1
+            fi
+            echo "Retrying in 10 seconds..."
+            sleep 10
+            attempt=$((attempt + 1))
+          fi
+        done
+        
+        echo "Verifying installations..."
+        pip list
     
     - name: Install PyInstaller
       run: |
