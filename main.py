@@ -120,12 +120,13 @@ class Transcribe:
 
     def cleanup(self):
         """Clean up temporary chunk files"""
-        for i in range(len(self.chunks)):
-            file_path = f"chunks/chunk_{i}.wav"
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-        if os.path.exists("chunks") and not os.listdir("chunks"):
-            os.rmdir("chunks")
+        # for i in range(len(self.chunks)):
+        #     file_path = f"chunks/chunk_{i}.wav"
+        #     if os.path.isfile(file_path):
+        #         os.remove(file_path)
+        # if os.path.exists("chunks") and not os.listdir("chunks"):
+        #     os.rmdir("chunks")
+        pass
 
     def run(self):
         """Main execution method"""

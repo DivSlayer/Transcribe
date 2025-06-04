@@ -59,5 +59,3 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 ) 
-
-pyinstaller --onefile --clean --noconfirm --add-data "templates:templates" --add-data "static:static" --add-data "uploads:uploads" --add-data "chunks:chunks" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct gui.py
