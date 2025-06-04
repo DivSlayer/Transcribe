@@ -1,4 +1,4 @@
-name: Build Executables
+name: Build and Release
 
 on:
   push:
@@ -6,43 +6,12 @@ on:
       - 'v*'
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v3
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
     
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
-    
-    - name: Create directories
-      run: |
-        mkdir templates static uploads chunks
-    
-    - name: Build Windows executable
-      run: |
-        pyinstaller --onefile --clean --noconfirm --add-data "templates;templates" --add-data "static;static" --add-data "uploads;uploads" --add-data "chunks;chunks" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct gui.py
-    
-    - name: List dist directory
-      run: |
-        dir dist
-    
-    - name: Upload Windows executable
-      uses: actions/upload-artifact@v3
-      with:
-        name: Transcribe-Windows
-        path: dist/Transcribe.exe
-        if-no-files-found: error
-
-  build-linux:
-    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     
@@ -52,6 +21,7 @@ jobs:
         python-version: '3.9'
     
     - name: Install system dependencies
+      if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y ffmpeg
@@ -66,54 +36,39 @@ jobs:
       run: |
         mkdir -p templates static uploads chunks
     
-    - name: Build Linux executable
+    - name: Build executable
+      if: matrix.os == 'windows-latest'
+      run: |
+        pyinstaller --onefile --clean --noconfirm --add-data "templates;templates" --add-data "static;static" --add-data "uploads;uploads" --add-data "chunks;chunks" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct gui.py
+        mv dist/Transcribe.exe dist/transcribe.exe
+    
+    - name: Build executable
+      if: matrix.os == 'ubuntu-latest'
       run: |
         pyinstaller --onefile --clean --noconfirm --add-data "templates:templates" --add-data "static:static" --add-data "uploads:uploads" --add-data "chunks:chunks" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct gui.py
+        chmod +x dist/transcribe
     
-    - name: List dist directory
-      run: |
-        ls -la dist/
-    
-    - name: Make executable
-      run: chmod +x dist/transcribe
-    
-    - name: Upload Linux executable
+    - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: Transcribe-Linux
-        path: dist/transcribe
-        if-no-files-found: error
+        name: transcribe-${{ matrix.os }}
+        path: dist/transcribe*
 
-  create-release:
-    needs: [build-windows, build-linux]
+  release:
+    needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: Create release directory
-      run: mkdir -p release
-    
-    - name: Download Windows executable
+    - name: Download all artifacts
       uses: actions/download-artifact@v3
       with:
-        name: Transcribe-Windows
-        path: release
-        if-no-files-found: error
-    
-    - name: Download Linux executable
-      uses: actions/download-artifact@v3
-      with:
-        name: Transcribe-Linux
-        path: release
-        if-no-files-found: error
-    
-    - name: List release directory
-      run: ls -la release/
+        path: artifacts
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          release/Transcribe.exe
-          release/transcribe
+          artifacts/transcribe-windows-latest/transcribe.exe
+          artifacts/transcribe-ubuntu-latest/transcribe
         name: Release ${{ github.ref_name }}
         tag_name: ${{ github.ref_name }}
         body: |
@@ -126,7 +81,7 @@ jobs:
           - Cross-platform support (Windows and Linux)
           
           ## Downloads
-          - Windows: Transcribe.exe
+          - Windows: transcribe.exe
           - Linux: transcribe (executable)
           
           ## System Requirements
