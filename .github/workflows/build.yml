@@ -2,9 +2,8 @@ name: Build Executables
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    tags:
+      - 'v*'
 
 jobs:
   build-windows:
@@ -78,47 +77,47 @@ jobs:
   create-release:
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     steps:
     - name: Download Windows executable
       uses: actions/download-artifact@v2
       with:
         name: Transcribe-Windows
-        path: dist
+        path: release
     
     - name: Download Linux executable
       uses: actions/download-artifact@v2
       with:
         name: Transcribe-Linux
-        path: dist
+        path: release
     
     - name: Create Release
       id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        files: |
+          release/Transcribe.exe
+          release/transcribe
+        name: Release ${{ github.ref_name }}
+        tag_name: ${{ github.ref_name }}
+        body: |
+          # Transcribe v${{ github.ref_name }}
+          
+          ## Features
+          - Audio transcription with real-time processing
+          - Support for multiple audio formats
+          - User-friendly GUI interface
+          - Cross-platform support (Windows and Linux)
+          
+          ## Downloads
+          - Windows: Transcribe.exe
+          - Linux: transcribe (executable)
+          
+          ## System Requirements
+          - Windows 10/11 or Linux (Kali Linux tested)
+          - FFmpeg installed (included in the package)
+          - 4GB RAM minimum recommended
+          - 500MB free disk space
         draft: false
         prerelease: false
-    
-    - name: Upload Windows Release Asset
-      uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/Transcribe.exe
-        asset_name: Transcribe.exe
-        asset_content_type: application/octet-stream
-    
-    - name: Upload Linux Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/transcribe
-        asset_name: transcribe
-        asset_content_type: application/octet-stream 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
