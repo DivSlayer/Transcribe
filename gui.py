@@ -93,9 +93,10 @@ class TranscriptionGUI:
 
             input_name= '.'.join(input_path.split('.')[:-1])
             input_name = input_name.split('/')[-1]
-            output_path = os.path.join(os.getcwd(),'output',f"c_{input_name}.mp3")
-            print(os.getcwd())
-            print(f"output path: {output_path}")
+            output_path = os.path.join(os.getcwd(),'output')
+            if not os.path.isdir(output_path):
+                os.makedirs(output_path,exist_ok=True)
+            output_path = os.path.join(output_path,f"c_{input_name}.mp3")
             audio = AudioSegment.from_ogg(input_path)
             audio.export(output_path, format="mp3")
             

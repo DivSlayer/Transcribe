@@ -34,18 +34,56 @@ jobs:
     
     - name: Create directories
       run: |
-        mkdir -p templates static uploads chunks
+        mkdir -p templates static uploads chunks output
     
     - name: Build executable
       if: matrix.os == 'windows-latest'
       run: |
-        pyinstaller --onefile --clean --noconfirm --add-data "templates;templates" --add-data "static;static" --add-data "uploads;uploads" --add-data "chunks;chunks" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct gui.py
-        mv dist/Transcribe.exe dist/transcribe.exe
+        pyinstaller --onefile --clean --noconfirm ^
+          --add-data "templates;templates" ^
+          --add-data "static;static" ^
+          --add-data "uploads;uploads" ^
+          --add-data "chunks;chunks" ^
+          --add-data "output;output" ^
+          --hidden-import channels ^
+          --hidden-import daphne ^
+          --hidden-import django ^
+          --hidden-import SpeechRecognition ^
+          --hidden-import pydub ^
+          --hidden-import ffmpeg ^
+          --hidden-import ffmpeg-python ^
+          --hidden-import aifc ^
+          --hidden-import wave ^
+          --hidden-import audioop ^
+          --hidden-import array ^
+          --hidden-import struct ^
+          --hidden-import numpy ^
+          gui.py
+        if (Test-Path dist/Transcribe.exe) { mv dist/Transcribe.exe dist/transcribe.exe }
     
     - name: Build executable
       if: matrix.os == 'ubuntu-latest'
       run: |
-        pyinstaller --onefile --clean --noconfirm --add-data "templates:templates" --add-data "static:static" --add-data "uploads:uploads" --add-data "chunks:chunks" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct gui.py
+        pyinstaller --onefile --clean --noconfirm \
+          --add-data "templates:templates" \
+          --add-data "static:static" \
+          --add-data "uploads:uploads" \
+          --add-data "chunks:chunks" \
+          --add-data "output:output" \
+          --hidden-import channels \
+          --hidden-import daphne \
+          --hidden-import django \
+          --hidden-import SpeechRecognition \
+          --hidden-import pydub \
+          --hidden-import ffmpeg \
+          --hidden-import ffmpeg-python \
+          --hidden-import aifc \
+          --hidden-import wave \
+          --hidden-import audioop \
+          --hidden-import array \
+          --hidden-import struct \
+          --hidden-import numpy \
+          gui.py
         chmod +x dist/transcribe
     
     - name: Upload artifact
@@ -79,6 +117,8 @@ jobs:
           - Support for multiple audio formats
           - User-friendly GUI interface
           - Cross-platform support (Windows and Linux)
+          - Advanced noise reduction and audio processing
+          - SRT subtitle generation
           
           ## Downloads
           - Windows: transcribe.exe
@@ -89,6 +129,17 @@ jobs:
           - FFmpeg installed (included in the package)
           - 4GB RAM minimum recommended
           - 500MB free disk space
+          
+          ## Installation
+          1. Download the appropriate executable for your system
+          2. Make sure you have FFmpeg installed (included in the package)
+          3. Run the executable
+          
+          ## Usage
+          1. Click "Select Audio File" to choose your audio file
+          2. Click "Transcribe" to start the transcription process
+          3. The transcription will be saved in the output folder
+          4. SRT subtitles will be generated automatically
         draft: false
         prerelease: false
       env:

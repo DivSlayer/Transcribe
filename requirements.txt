@@ -2,3 +2,4 @@ SpeechRecognition
 pydub
 pyinstaller
 ffmpeg-python
+numpy
