@@ -76,7 +76,9 @@ jobs:
         Write-Host "Directory contents:"
         Get-ChildItem -Recurse
         
-        pyinstaller --onefile --clean --noconfirm `
+        # Create spec file first
+        Write-Host "Creating spec file..."
+        pyi-makespec --onefile --clean --noconfirm `
           --add-data "chunks;chunks" `
           --add-data "output;output" `
           --hidden-import channels `
@@ -94,6 +96,10 @@ jobs:
           --hidden-import numpy `
           --hidden-import pyaudio `
           gui.py
+        
+        # Build using spec file
+        Write-Host "Building with spec file..."
+        pyinstaller --clean --noconfirm gui.spec
         
         Write-Host "PyInstaller build completed"
         Write-Host "Checking dist directory:"
@@ -119,9 +125,13 @@ jobs:
         echo "Directory contents:"
         ls -la
         
-        # Build with verbose output
-        echo "Starting PyInstaller build..."
-        pyinstaller --onefile --clean --noconfirm --add-data "chunks:chunks" --add-data "output:output" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct --hidden-import numpy --hidden-import pyaudio --log-level DEBUG gui.py
+        # Create spec file first
+        echo "Creating spec file..."
+        pyi-makespec --onefile --clean --noconfirm --add-data "chunks:chunks" --add-data "output:output" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct --hidden-import numpy --hidden-import pyaudio gui.py
+        
+        # Build using spec file
+        echo "Building with spec file..."
+        pyinstaller --clean --noconfirm gui.spec
         
         echo "PyInstaller build completed"
         echo "Checking dist directory:"
