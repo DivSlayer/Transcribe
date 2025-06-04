@@ -74,7 +74,7 @@ jobs:
         pip list
         
         # Build with verbose output
-        pyinstaller --onefile --clean --noconfirm --add-data "templates:templates" --add-data "static:static" --add-data "uploads:uploads" --add-data "chunks:chunks" --add-data "output:output" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct --hidden-import numpy --hidden-import pyaudio --log-level DEBUG gui.py
+        pyinstaller --onefile --clean --noconfirm --add-data --add-data "chunks:chunks" --add-data "output:output" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct --hidden-import numpy --hidden-import pyaudio --log-level DEBUG gui.py
         
         # Check if build was successful
         if [ -f "dist/transcribe" ]; then
