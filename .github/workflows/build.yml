@@ -35,10 +35,6 @@ jobs:
         pip install numpy
         pip install PyAudio
     
-    - name: Create directories
-      run: |
-        mkdir -p chunks output
-    
     - name: Build executable
       if: matrix.os == 'windows-latest'
       run: |
