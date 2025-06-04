@@ -3,6 +3,7 @@ import subprocess
 import json
 import shutil
 import tempfile
+import locale
 
 def create_video_with_subtitles(audio_path, srt_path, output_path, width=1920, height=1080):
     """
@@ -34,13 +35,16 @@ def create_video_with_subtitles(audio_path, srt_path, output_path, width=1920, h
         ]
         
         try:
-            duration = float(json.loads(subprocess.check_output(duration_cmd).decode())['format']['duration'])
+            # Use UTF-8 encoding for FFmpeg output
+            result = subprocess.run(duration_cmd, capture_output=True, text=True, encoding='utf-8')
+            result.check_returncode()
+            duration = float(json.loads(result.stdout)['format']['duration'])
         except Exception as e:
             raise Exception(f"Failed to get audio duration: {str(e)}")
         
         # Create black background video
         try:
-            subprocess.run([
+            result = subprocess.run([
                 'ffmpeg', '-y',
                 '-f', 'lavfi',
                 '-i', f'color=c=black:s={width}x{height}:d={duration}',
@@ -48,7 +52,8 @@ def create_video_with_subtitles(audio_path, srt_path, output_path, width=1920, h
                 '-preset', 'medium',
                 '-crf', '23',
                 temp_video
-            ], check=True, capture_output=True, text=True)
+            ], capture_output=True, text=True, encoding='utf-8')
+            result.check_returncode()
         except subprocess.CalledProcessError as e:
             raise Exception(f"Failed to create background video: {e.stderr}")
         
@@ -57,7 +62,8 @@ def create_video_with_subtitles(audio_path, srt_path, output_path, width=1920, h
             # Escape special characters in the SRT path for FFmpeg
             escaped_srt_path = temp_srt.replace('\\', '\\\\').replace(':', '\\:')
             
-            subprocess.run([
+            # Use UTF-8 encoding for FFmpeg output
+            result = subprocess.run([
                 'ffmpeg', '-y',
                 '-i', temp_video,
                 '-i', audio_path,
@@ -67,7 +73,8 @@ def create_video_with_subtitles(audio_path, srt_path, output_path, width=1920, h
                 '-b:a', '192k',
                 '-shortest',
                 output_path
-            ], check=True, capture_output=True, text=True)
+            ], capture_output=True, text=True, encoding='utf-8')
+            result.check_returncode()
         except subprocess.CalledProcessError as e:
             raise Exception(f"Failed to create final video: {e.stderr}")
 

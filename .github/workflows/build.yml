@@ -37,7 +37,7 @@ jobs:
     
     - name: Create directories
       run: |
-        mkdir -p templates chunks output
+        mkdir -p chunks output
     
     - name: Build executable
       if: matrix.os == 'windows-latest'
