@@ -159,32 +159,32 @@ jobs:
         Write-Host "Directory contents:"
         Get-ChildItem -Recurse
         
-        # Create spec file first
+        # Install argcomplete first
+        Write-Host "Installing argcomplete..."
+        pip install argcomplete
+        
+        # Create spec file with error handling
         Write-Host "Creating spec file..."
-        pyi-makespec --onefile --clean --noconfirm `
-          --add-data "chunks;chunks" `
-          --add-data "output;output" `
-          --hidden-import channels `
-          --hidden-import daphne `
-          --hidden-import django `
-          --hidden-import SpeechRecognition `
-          --hidden-import pydub `
-          --hidden-import ffmpeg `
-          --hidden-import ffmpeg-python `
-          --hidden-import aifc `
-          --hidden-import wave `
-          --hidden-import audioop `
-          --hidden-import array `
-          --hidden-import struct `
-          --hidden-import numpy `
-          --hidden-import pyaudio `
-          gui.py
+        try {
+          pyi-makespec --onefile --clean --noconfirm --add-data "chunks;chunks" --add-data "output;output" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct --hidden-import numpy --hidden-import pyaudio transcribe.py
+          Write-Host "Spec file created successfully"
+        }
+        catch {
+          Write-Host "Error creating spec file: $_"
+          exit 1
+        }
         
         # Build using spec file
         Write-Host "Building with spec file..."
-        pyinstaller --clean --noconfirm transcribe.spec
+        try {
+          pyinstaller --clean --noconfirm transcribe.spec
+          Write-Host "PyInstaller build completed"
+        }
+        catch {
+          Write-Host "Error during PyInstaller build: $_"
+          exit 1
+        }
         
-        Write-Host "PyInstaller build completed"
         Write-Host "Checking dist directory:"
         Get-ChildItem -Path dist
         
