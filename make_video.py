@@ -1,6 +1,8 @@
 import os
 import subprocess
 import json
+import shutil
+import tempfile
 
 def create_video_with_subtitles(audio_path, srt_path, output_path, width=1920, height=1080):
     """
@@ -13,47 +15,61 @@ def create_video_with_subtitles(audio_path, srt_path, output_path, width=1920, h
         width (int): Video width in pixels
         height (int): Video height in pixels
     """
-    # Create a temporary video with black background
-    temp_video = 'temp_black.mp4'
-    
-    # Get audio duration using FFmpeg
-    duration_cmd = [
-        'ffprobe', 
-        '-v', 'error',
-        '-show_entries', 'format=duration',
-        '-of', 'json',
-        audio_path
-    ]
-    
-    duration = float(json.loads(subprocess.check_output(duration_cmd).decode())['format']['duration'])
-    
-    # Create black background video
-    subprocess.run([
-        'ffmpeg', '-y',
-        '-f', 'lavfi',
-        '-i', f'color=c=black:s={width}x{height}:d={duration}',
-        '-c:v', 'libx264',
-        '-preset', 'medium',
-        '-crf', '23',
-        temp_video
-    ], check=True)
-    
-    # Create the final video with audio and subtitles
-    subprocess.run([
-        'ffmpeg', '-y',
-        '-i', temp_video,
-        '-i', audio_path,
-        '-vf', f'subtitles={srt_path}:force_style=\'FontName=Arial,FontSize=24,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,Outline=2,BorderStyle=3,Alignment=2\'',
-        '-c:v', 'libx264',
-        '-c:a', 'aac',
-        '-b:a', '192k',
-        '-shortest',
-        output_path
-    ], check=True)
-    
-    # Clean up temporary file
-    if os.path.exists(temp_video):
-        os.remove(temp_video)
+    # Create temporary directory for working files
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create temporary files with ASCII names
+        temp_video = os.path.join(temp_dir, 'temp_black.mp4')
+        temp_srt = os.path.join(temp_dir, 'temp_subtitles.srt')
+        
+        # Copy SRT file to temporary location with ASCII name
+        shutil.copy2(srt_path, temp_srt)
+        
+        # Get audio duration using FFmpeg
+        duration_cmd = [
+            'ffprobe', 
+            '-v', 'error',
+            '-show_entries', 'format=duration',
+            '-of', 'json',
+            audio_path
+        ]
+        
+        try:
+            duration = float(json.loads(subprocess.check_output(duration_cmd).decode())['format']['duration'])
+        except Exception as e:
+            raise Exception(f"Failed to get audio duration: {str(e)}")
+        
+        # Create black background video
+        try:
+            subprocess.run([
+                'ffmpeg', '-y',
+                '-f', 'lavfi',
+                '-i', f'color=c=black:s={width}x{height}:d={duration}',
+                '-c:v', 'libx264',
+                '-preset', 'medium',
+                '-crf', '23',
+                temp_video
+            ], check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            raise Exception(f"Failed to create background video: {e.stderr}")
+        
+        # Create the final video with audio and subtitles
+        try:
+            # Escape special characters in the SRT path for FFmpeg
+            escaped_srt_path = temp_srt.replace('\\', '\\\\').replace(':', '\\:')
+            
+            subprocess.run([
+                'ffmpeg', '-y',
+                '-i', temp_video,
+                '-i', audio_path,
+                '-vf', f'subtitles={escaped_srt_path}:force_style=\'FontName=Arial,FontSize=24,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,Outline=2,BorderStyle=3,Alignment=2\'',
+                '-c:v', 'libx264',
+                '-c:a', 'aac',
+                '-b:a', '192k',
+                '-shortest',
+                output_path
+            ], check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            raise Exception(f"Failed to create final video: {e.stderr}")
 
 if __name__ == '__main__':
     # Example usage
