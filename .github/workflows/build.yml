@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
@@ -34,22 +35,34 @@ jobs:
         pip install pyinstaller
         pip install numpy
         pip install PyAudio
+        echo "Python packages installed:"
+        pip list
     
     - name: Create directories
       if: matrix.os == 'ubuntu-latest'
       run: |
         mkdir -p chunks output
+        echo "Created directories:"
+        ls -la
     
     - name: Create directories
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Force -Path chunks, output
+        Write-Host "Created directories:"
+        Get-ChildItem
     
     - name: Build executable
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
+        Write-Host "Starting PyInstaller build..."
+        Write-Host "Current directory:"
+        Get-Location
+        Write-Host "Directory contents:"
+        Get-ChildItem -Recurse
+        
         pyinstaller --onefile --clean --noconfirm `
           --add-data "chunks;chunks" `
           --add-data "output;output" `
@@ -68,7 +81,15 @@ jobs:
           --hidden-import numpy `
           --hidden-import pyaudio `
           gui.py
-        if (Test-Path dist/Transcribe.exe) { mv dist/Transcribe.exe dist/transcribe.exe }
+        
+        Write-Host "PyInstaller build completed"
+        Write-Host "Checking dist directory:"
+        Get-ChildItem -Path dist
+        
+        if (Test-Path dist/Transcribe.exe) { 
+          Write-Host "Renaming Transcribe.exe to transcribe.exe"
+          mv dist/Transcribe.exe dist/transcribe.exe 
+        }
     
     - name: Build executable
       if: matrix.os == 'ubuntu-latest'
@@ -80,9 +101,18 @@ jobs:
         pip --version
         echo "Installed packages:"
         pip list
+        echo "Current directory:"
+        pwd
+        echo "Directory contents:"
+        ls -la
         
         # Build with verbose output
+        echo "Starting PyInstaller build..."
         pyinstaller --onefile --clean --noconfirm --add-data "chunks:chunks" --add-data "output:output" --hidden-import channels --hidden-import daphne --hidden-import django --hidden-import SpeechRecognition --hidden-import pydub --hidden-import ffmpeg --hidden-import ffmpeg-python --hidden-import aifc --hidden-import wave --hidden-import audioop --hidden-import array --hidden-import struct --hidden-import numpy --hidden-import pyaudio --log-level DEBUG gui.py
+        
+        echo "PyInstaller build completed"
+        echo "Checking dist directory:"
+        ls -la dist/
         
         # Check if build was successful
         if [ -f "dist/transcribe" ]; then
@@ -102,6 +132,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
